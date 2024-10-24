@@ -1,7 +1,7 @@
 import { User } from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import uploadFileOnCloudinary from "../services/cloudinary.js";
+import { uploadOnCloudinary } from "../services/cloudinary.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -12,7 +12,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const duplicateUser = User.findOne({
+  const duplicateUser = await User.findOne({
     $or: [{ email }, { username }],
   });
 
@@ -21,32 +21,39 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalFile = req.files?.avatar[0].path;
-  const coverImageLocalFile = req.files?.coverImage[0].path;
+
+  let coverImageLocalFile;
+  if (
+    req.files &&
+    typeof req.files.coverImage === Array &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalFile = req.files.coverImage[0].path;
+  }
 
   if (!avatarLocalFile) {
     throw new ApiError(400, "Avatar is required");
   }
 
-  const cloudAvatar = await uploadFileOnCloudinary(avatarLocalFile);
-  const cloudCoverImage = await uploadFileOnCloudinary(coverImageLocalFile);
+  const cloudAvatar = await uploadOnCloudinary(avatarLocalFile);
+  const cloudCoverImage = await uploadOnCloudinary(coverImageLocalFile);
 
   if (!cloudAvatar) {
-    throw new ApiError(400, "Avatar is required");
+    throw new ApiError(400, "Avatar is required cloudinary error");
   }
 
   const user = await User.create({
     fullName,
     email,
     password,
-    refreshToken,
-    username: username.tolowerCase(),
+    username: username.toLowerCase(),
     avatar: cloudAvatar.url,
     coverImage: cloudCoverImage?.url || "",
   });
 
-  const createdUser = await user
-    .findBy(user._id)
-    .select("-password -refreshToken");
+  const createdUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
 
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while creating user");
