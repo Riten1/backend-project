@@ -24,3 +24,5 @@ const uploadFileOnCloudinary = async (filePath) => {
     fs.unlinkSync(filePath);
   }
 };
+
+export default uploadFileOnCloudinary

@@ -12,8 +12,21 @@ app.use(express.static("public"));
 
 //import routes
 import userRouter from "./routes/user.route.js";
-
+import { upload } from "./middlewares/multer.middleware.js";
 //import router declaration
-app.use("/api/v1/users", userRouter);
+app.use(
+  "/api/v1/users",
+  upload.fields([
+    {
+      name: "avatar",
+      maxCount: 1,
+    },
+    {
+      name: "coverImage",
+      maxCount: 1,
+    },
+  ]),
+  userRouter
+);
 
 export default app;
