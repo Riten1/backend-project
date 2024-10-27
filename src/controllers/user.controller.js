@@ -200,4 +200,30 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Token expired");
   }
 });
+
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    throw new ApiError(400, "NewPassword and confirm password didn't matched");
+  }
+
+  const user = await User.findById(req.user._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Current password is incorrect");
+  }
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse({}, 200, "Password changed successfully"));
+});
 export { registerUser, loginUser, logoutUser, refreshAccessToken };
