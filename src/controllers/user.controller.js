@@ -3,6 +3,7 @@ import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -293,7 +294,7 @@ const updateCoverImage = asyncHandler(async (req, res) => {
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
-  if (!coverImage.url) {
+  if (!coverImage?.url) {
     throw new ApiError(
       500,
       "Something went wrong while uploading coverImage in cloudinary"
@@ -428,7 +429,13 @@ const watchHistory = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(user[0].watchHistory, 200, "Fetched successfully"));
+    .json(
+      new ApiResponse(
+        user[0].watchHistory,
+        200,
+        "Watch history fetched successfully"
+      )
+    );
 });
 
 export {
@@ -438,6 +445,7 @@ export {
   refreshAccessToken,
   getCurrentUser,
   changeCurrentPassword,
+  updateAccountDetails,
   updateUserAvatar,
   updateCoverImage,
   getProfileDetails,
